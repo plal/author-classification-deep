@@ -4,7 +4,7 @@ import torch.nn.functional as f
 
 class WordsModel(nn.Module):
 
-    def __init__(self, model_name, out_feat=22, pretrained=True):
+    def __init__(self, model_name, out_feat=22, pretrained=False):
         super().__init__()
 
         self.model_name = model_name
@@ -35,5 +35,6 @@ class WordsModel(nn.Module):
 
         in_feat = {'resnet34':512, 'resnet50':2048 }
         clf = nn.Linear(in_features=in_feat[self.model_name], out_features=self.out_feat, bias=True)
-
+        
+        self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.model.fc = clf
