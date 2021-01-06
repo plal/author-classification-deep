@@ -13,6 +13,7 @@ import argparse
 import yaml
 import random
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from tqdm import tqdm as tqdm
 
@@ -44,11 +45,12 @@ args = vars(ap.parse_args())
 exp_name = args["exp_name"]
 
 #training hparams
-seed       = args["seed"]
-batch_size = args["batch_size"]
-max_epoch  = args["max_epoch"]
-early_stop = args["early_stop"]
-lr         = args["lr"]
+seed          = args["seed"]
+batch_size    = args["batch_size"]
+max_epoch     = args["max_epoch"]
+early_stop    = args["early_stop"]
+lr            = args["lr"]
+loss_function = 'CrossEntropyLoss'
 
 #model hparams
 model_name  = args["model"]
@@ -193,7 +195,7 @@ print(f'train set information -> input shape: {inputs.shape} // labels shape: {l
 
 #TRAINING MODEL
 epoch = -1
-best_f1, _ = validation_epoch(model, val_loader, epoch, is_cuda=False)
+best_f1, _ = validation_epoch(model, val_loader, epoch, is_cuda=True)
 epoch_since_best = 0
 
 history = []
@@ -203,14 +205,14 @@ for epoch in range(start_epoch, max_epoch):
         print("early stop activated!")
         break
 
-    _, train_metrics = train_epoch(model, train_loader, epoch, is_cuda=False)
+    _, train_metrics = train_epoch(model, train_loader, epoch, is_cuda=True)
     if epoch == 0:
         model.update_weight()
-    current_f1, val_metrics = validation_epoch(model, val_loader, epoch, is_cuda=False)
+    current_f1, val_metrics = validation_epoch(model, val_loader, epoch, is_cuda=True)
 
     history.append({**train_metrics, **val_metrics})
     df = pd.DataFrame(history)
-    df.to_csv(Path(save_dir) / history.csv, index=False)
+    df.to_csv(Path(save_dir) / 'history.csv', index=False)
 
     if current_f1 > best_f1:
         best_f1 = current_f1
@@ -228,7 +230,7 @@ for epoch in range(start_epoch, max_epoch):
             'model_name':model_name
         }, save_name)
 
-        best = df.loc[df.f1_valid.idxmax()].to_dict()
+        best = df.loc[df.f1_validation.idxmax()].to_dict()
         (Path(save_dir) / 'summary.yaml').write_text(yaml.dump(best))
 
         epoch_since_best = 0
